@@ -12,7 +12,7 @@ SAMPLES_VIEW = 0
 pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 rospy.init_node('cmd_vel', anonymous=True)
 move_cmd = Twist()
-move_cmd.linear.x = -1.22
+move_cmd.linear.x = 1.22
 
 now = rospy.Time.now()
 rate = rospy.Rate(1000)

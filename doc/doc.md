@@ -46,6 +46,10 @@ Add the camera from the waffle model to the burger model
 Start up the OpenCV example to view the picture
 
 
+## installing raspi-config
+https://chuckmails.medium.com/enable-pi-camera-with-raspberry-pi4-ubuntu-20-10-327208312f6e
+
+
 
 Questions:
 1. ROS Core does start on the Raspberry but there are some packages missing???
