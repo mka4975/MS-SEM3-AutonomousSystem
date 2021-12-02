@@ -1,4 +1,4 @@
-# Documentation of Autonom System
+# Documentation of Autonomous Systems
 ## Setting up the Turtlebot
 Firstly we updated the turtlebot to ros/noetic
 https://emanual.robotis.com/docs/en/platform/turtlebot3/sbc_setup/#sbc-setup
@@ -19,9 +19,9 @@ afterwards check wifi connection by running: **ifconfig**
 ## Connection between host and raspberry
 try to ping the host from the raspberry and vis versa
 afterwards try to ssh from each other
-export ROS_IP=ipofRaspberry
+export ROS_IP=ipofHost
 export ROS_HOSTNAME=ipofRaspberry
-export ROS_MASTER_URI=http://ipofRaspberry:11311
+export ROS_MASTER_URI=http://ipofHost:11311
 
 try to start a roscore on the host and check if the raspberry can access the topic list
 http://wiki.ros.org/ROS/NetworkSetup

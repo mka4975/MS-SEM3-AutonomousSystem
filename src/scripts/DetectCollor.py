@@ -7,6 +7,7 @@ import cv2
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+import numpy as np
 
 class image_converter:
 
@@ -14,11 +15,30 @@ class image_converter:
     self.image_pub = rospy.Publisher("image_topic_2",Image)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw/compressed",Image,self.callback)
 
   def callback(self,data):
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+
+      # lower mask (0-10)
+      lower_red = np.array([0,50,50])
+      upper_red = np.array([10,255,255])
+      mask0 = cv2.inRange(hsv, lower_red, upper_red)
+
+      # upper mask (170-180)
+      lower_red = np.array([170,50,50])
+      upper_red = np.array([180,255,255])
+      mask1 = cv2.inRange(hsv, lower_red, upper_red)
+      
+      mask = mask0+mask1
+
+      output_hsv = hsv.copy()
+      output_hsv[np.where(mask==0)] = 0
+
+      cv2.imshow("Color Detected", np.hstack((cv_image,output_hsv)))
+
     except CvBridgeError as e:
       print(e)
 

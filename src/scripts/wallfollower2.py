@@ -63,7 +63,7 @@ class WallFollowerTwo:
                 twist.angular.z = 0.2
             else:
                 print("Turn Right")
-                twist.angular.z = -0.05
+                twist.angular.z = -0.2
         else:
             # Dive to wall or clear back of robot if closest walls are behind
             if not (120 < closestK[0] < 240):
