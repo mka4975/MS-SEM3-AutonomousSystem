@@ -15,14 +15,15 @@ class image_converter:
     self.image_pub = rospy.Publisher("image_topic_2",Image)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw/compressed",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.callback) #for Gazebo tourtlebot
+    self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",Image,self.callback) #for real robot image
 
   def callback(self,data):
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
       hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
-      # lower mask (0-10)
+      # lower mask (0-10) 
       lower_red = np.array([0,50,50])
       upper_red = np.array([10,255,255])
       mask0 = cv2.inRange(hsv, lower_red, upper_red)
