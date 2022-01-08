@@ -1,0 +1,4 @@
+<launch>
+  <machine name="turtlebot" address="10.0.0.7" user="pi" password="turtlebot" default="true"/>
+  <include file="/opt/ros/kinetic/launch/turtlebot3_robot.launch"/>
+</launch>
