@@ -8,29 +8,52 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import LaserScan
+import math
 
 class image_converter:
 
   def __init__(self):
-    #self.image_pub = rospy.Publisher("image_topic_2",7Image)
+    self.image_pub = rospy.Publisher("image_topic_2",Image)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback) #for Gazebo tourtlebot
-    #self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage,self.callback) #for real robot image
+    #self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.callback) #for Gazebo tourtlebot
+    self.image_sub = rospy.Subscriber("/raspicam_node/image",Image,self.callback) #for real robot image
+
+  def get_scan(self):
+    global SAMPLES
+    global SAMPLES_VIEW
+    scan = rospy.wait_for_message('scan', LaserScan)
+    scan_filter = []
+      
+    # rospy.loginfo(scan)
+    SAMPLES = len(scan.ranges)
+    SAMPLES_VIEW = 360
+    if SAMPLES_VIEW > SAMPLES:
+        SAMPLES_VIEW = SAMPLES
+    if SAMPLES_VIEW == 1 :
+        scan_filter.append(scan.ranges[0])
+    
+    else: 
+        scan_filter.extend(scan.ranges)
+    for i in range(SAMPLES_VIEW):
+        if scan_filter[i] == float('Inf'):
+            scan_filter[i] = 3.5
+        elif math.isnan(scan_filter[i]):
+            scan_filter[i] = 0
+    
+    return scan_filter
 
   def callback(self,data):
     try:
-      # camera turtlebot
-      # np_arr = np.fromstring(data.data, np.uint8)
-      # image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-      # cv_image = image_np
-      # camera gazebo
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      #cv_image = self.bridge.imgmsg_to_cv2(data)
       hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-      hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+      
 
       # lower mask (0-10) 
-      lower_red = np.array([0,50,50])
+      lower_red = np.array([100,50,50])
       upper_red = np.array([10,255,255])
       mask0 = cv2.inRange(hsv, lower_red, upper_red)
 
@@ -43,8 +66,97 @@ class image_converter:
 
       output_hsv = hsv.copy()
       output_hsv[np.where(mask==0)] = 0
+      data = np.asarray(output_hsv) # Data shape(1080, 1920, 3)
 
-      cv2.imshow("Color Detected", np.hstack((cv_image,output_hsv)))
+      # Algorithm center of the blob detection
+
+      # Read image
+      img = output_hsv
+
+      # convert image to grayscale image
+      gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+      # convert the grayscale image to binary image
+      ret,thresh = cv2.threshold(gray_image,127,255,0)
+
+      # calculate moments of binary image
+      M = cv2.moments(thresh)
+
+      # calculate x,y coordinate of center
+      if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+      else:
+        cX, cY = 0, 0
+
+      # put text and highlight the center
+      cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
+      cv2.putText(img, "centroid", (cX - 25, cY - 25),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+      # display the image
+      cv2.imshow("Image", img)
+      print(f"{cX=} , {cY=}")
+
+      #/ Algorithm: center of the blob detection
+      
+      cv2.imshow("Color Detected", (output_hsv))
+
+      # Wallfollower
+
+      self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+      twist = Twist()
+      
+      lidar_distances = self.get_scan()
+      min_distance = min(lidar_distances)
+
+      N1_direction = min(lidar_distances[0:30])       
+      N2_direction = min(lidar_distances[330:360])
+      N_direction = min(N1_direction, N2_direction)
+      S_direction = min(lidar_distances[150:210])
+      E_up_direction = min(lidar_distances[290:329])
+      E_mid_direction = min(lidar_distances[260:280])
+      E_down_direction = min(lidar_distances[220:250])
+      E_region = [E_up_direction, E_mid_direction, E_down_direction]
+      E_direction = min(E_region)
+      W_up_direction = min(lidar_distances[31:70])
+      W_mid_direction = min(lidar_distances[80:110])
+      W_down_direction = min(lidar_distances[120:150])
+      W_region = [W_up_direction, W_mid_direction, W_down_direction]
+      W_direction = min(W_up_direction, W_mid_direction, W_down_direction)
+
+      if 0 < cY < 1000:
+        # Avoidance of possible obstacles
+        if N_direction < 0.1:
+          if N1_direction-N2_direction>0.1:
+            print("Avoid collision. Turn right")
+            twist.linear.x = 0.0
+            twist.angular.z = -0.2
+            self._cmd_pub.publish(twist)
+          elif N2_direction-N1_direction>0.1:
+            print("Avoid collision. Turn left")
+            twist.linear.x = 0.0
+            twist.angular.z = 0.2
+            self._cmd_pub.publish(twist)  
+        # Getting to the center of token
+        if cX <= 940:
+          twist.linear.x = 0.07
+          twist.angular.z = 0.1
+          self._cmd_pub.publish(twist)
+        elif cX > 980:
+          twist.linear.x = 0.07
+          twist.angular.z = -0.1
+          self._cmd_pub.publish(twist)
+        else:
+          twist.linear.x = 0.2
+          twist.angular.z = 0.0
+          self._cmd_pub.publish(twist)
+      
+      else :
+        twist.linear.x = 0
+        twist.angular.z = 0
+        self._cmd_pub.publish(twist)
+
+      
 
     except CvBridgeError as e:
       print(e)
@@ -56,10 +168,11 @@ class image_converter:
     cv2.imshow("Image window", cv_image)
     cv2.waitKey(3)
 
-    # try:
-    #   self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
-    # except CvBridgeError as e:
-    #   print(e)
+    try:
+      self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
+    except CvBridgeError as e:
+      print(e)
+
 
 def main(args):
   ic = image_converter()

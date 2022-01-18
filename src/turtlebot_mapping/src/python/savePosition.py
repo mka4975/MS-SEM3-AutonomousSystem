@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from socket import SO_ACCEPTCONN
+from std_msgs.msg import String, Bool
 import rospy
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import actionlib
-import tf
-import geometry_msgs.msg
+from turtlebot3_msgs.msg import *
 from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose, Point, Quaternion
+import xml.etree.ElementTree as ET
+
+number = 0
 
 class SavePosition():
 
@@ -13,36 +14,62 @@ class SavePosition():
         self.saved = False
         rospy.on_shutdown(self.shutdown)
 
+    def saveToFile (self, message):
+        global number        
+        if self.checkMessage(message):
+            f = open("position.txt","a")
+            f.write(str(number) + "\n")
+            f.write(str(message) + "\n\n")
+            f.close()
+            rospy.loginfo('position Saved as number ' + str(number))
+        else: 
+            f = open("position.txt","a")
+            f.write(str(number) + "\n")
+            f.write("not successfull" + "\n\n")
+            f.close()
+        number = number + 1
+        return True           
+
+
+    def nodeCallback(self, message):
+        global number
+        success = False
+
+        if message.data == True:
+            success = rospy.Subscriber("tf", TFMessage, self.tfCallback)
+        rospy.loginfo('heard on tokenFound' + str(message))
+        SavePosition.saveToFile(message)
+        return success
+
+        
     def save(self):
         self.saved = True
-
-        listener = tf.TransformListener()
-
-        (trans,rot)=listener.lookupTransform("tf_echo","/map","/base_link",rospy.Time(0))
-
-        if trans != None :
-            rospy.loginfo(trans)
-            rospy.loginfo(rot)
-            return True
-        else:
-            return False
+        rospy.Subscriber("tokenFound", Bool, self.nodeCallback)
+        rospy.spin()
 
     def shutdown(self):
         rospy.loginfo("Stop")
-        rospy.sleep(1)
+
+    def checkMessage(self,message):
+        x = ""
+        y = ""
+        z = ""
+        x = (str(message).split("x: "))[1].split("\n"[0])
+        y = (str(message).split("y: "))[1].split("\n"[0])
+        z = (str(message).split("z: "))[1].split("\n"[0])
+        
+        rospy.loginfo('values' + str(x) + str(y) + str(z))
 
 
-if __name__ == '__main__':
+def main():
     try:
         saver = SavePosition()
         rospy.init_node('savePosition', anonymous=False)
-        success = saver.save()
+        saver.save()
 
-        if success:
-            rospy.rospy.loginfo('Position Saved')
-        else:
-            rospy.loginfo('Position could not be saved')
-        
-        rospy.sleep(1)
+        rospy.spin()
     except rospy.ROSInterruptException:
         rospy.rospy.loginfo('Ctrl-C caught. Quitting')
+
+if __name__ == '__main__':
+    main()

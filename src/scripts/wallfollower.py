@@ -220,10 +220,10 @@ class FollowWall():
         
 
     def main():
-        #rospy.init_node('turlebot3_wallfollower')
+        rospy.init_node('turlebot3_wallfollower')
         try:
             while not stop : 
-                FollowWall()
+                follow()
         except rospy.ROSInterruptException:
             pass
 
@@ -232,5 +232,5 @@ class FollowWall():
         global stop
         stop = True
 
-if __name__ ==  '__main__':
-    main()
+    if __name__ ==  '__main__':
+        main()

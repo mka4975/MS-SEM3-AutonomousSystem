@@ -19,7 +19,14 @@ afterwards check wifi connection by running: **ifconfig**
 
 <br>
 
-## Setup.bash file
+## Setup.bash file for robot
+export TURTLEBOT3_MODEL=burger
+export ROS_HOSTNAME=10.0.0.7
+export ROS_IP=10.0.0.14
+export ROS_MASTER_URI=http://10.0.0.14:11311
+
+
+## Setup.bash file for pc
 export TURTLEBOT3_MODEL=burger
 export GAZEBO_IP=127.0.0.1
 export DISPLAY='OU-FF-IMZ-NB:0.0'
