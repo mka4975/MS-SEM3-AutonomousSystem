@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import glob
-from logging import getLoggerClass
 
 import sys
-from savePosition import SavePosition
 import rospy
 import cv2
-from std_msgs.msg import String, Bool
-from sensor_msgs.msg import Image, CompressedImage
+from std_msgs.msg import String
+from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -16,19 +13,23 @@ from sensor_msgs.msg import LaserScan
 import math
 
 
-numberOfFoundTokens = 0
-numberOfTokens = 0
-class findTags:
-  global numberOfFoundTokens
-  global numberOfTokens
 
-  def main(self, argnumberOfTokens):
-    global numberOfTokens 
-    numberOfTokens = argnumberOfTokens
+class image_converter:
+
+  def __init__(self):
+
     self.image_pub = rospy.Publisher("image_topic_2",Image)
+    # img = cv2.imread(self.image_pub)
+    # k = 5
+    # width = int((img.shape[1])/k)
+    # height = int((img.shape[0])/k)
+    # scaled = cv2.resize(img, (width, height), interpolation=cv2.INTER_AREA)
+    # Image = scaled
+
+    # cv2.imwrite("/camera/rgb/image_raw", image, [int(cv2.IMWRITE_PNG_COMPRESSION), 4])
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.callback) #for Gazebo tourtlebot
-    # self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage,self.callback) #for real robot image
+    # self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",Image,self.callback) #for real robot image
 
     
   def get_scan(self):
@@ -57,13 +58,10 @@ class findTags:
 
   def callback(self,data):
     global tokenFound
-    global numberOfTokens
     tokenFound = False
     
     try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8") #for the simulation
-      #np_arr = np.fromstring(data.data, np.uint8) # for the turtlebot
-      #cv_image = self.bridge.compressed_imgmsg_to_cv2(np_arr, "bgr8") #for the turtlebot
+      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
       hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
       
 
@@ -127,12 +125,12 @@ class findTags:
       N2_direction = min(lidar_distances[330:360])
       N_direction = min(N1_direction, N2_direction)
       E_up_direction = min(lidar_distances[290:329])
-      E_mid_direction = min(lidar_distances[270:280])      
+      E_mid_direction = min(lidar_distances[270:280])
       W_up_direction = min(lidar_distances[31:70])
 
       # Token finding
       def goToToken():
-        global numberOfTokens
+        tokenCount = 0
         if 0 < cY < 1000:
           print(f"Distance to center: {cX=} , {cY=}")
           # Avoidance of possible obstacles
@@ -149,12 +147,12 @@ class findTags:
               self._cmd_pub.publish(twist)  
           # Getting to the center of token
           if cX <= 940:
-            twist.linear.x = 0.1
-            twist.angular.z = 0.1
+            twist.linear.x = 0.07
+            twist.angular.z = 0.05
             self._cmd_pub.publish(twist)
           elif cX > 980:
-            twist.linear.x = 0.1
-            twist.angular.z = -0.1
+            twist.linear.x = 0.07
+            twist.angular.z = -0.05
             self._cmd_pub.publish(twist)
           else:
             twist.linear.x = 0.1
@@ -164,10 +162,15 @@ class findTags:
           twist.linear.x = 0
           twist.angular.z = 0
           self._cmd_pub.publish(twist)
-          foundToken()
+          tokenCount += 1
+          print(tokenCount)
+          if tokenCount > 20:
+            tokenFound = False
+
+      # /Token finding
+
       # Wallfollower
       def followWall():
-        global numberOfFoundTokens
         distance = 0.3
         # Turn right
         print(f"{N_direction=}, {W_up_direction=}, {E_up_direction=}, {E_mid_direction=}")
@@ -176,13 +179,11 @@ class findTags:
             twist.linear.x = 0.06
             twist.angular.z = -0.3
             self._cmd_pub.publish(twist)
-        # Turning left if facing obstacle only at N sensor
         elif N_direction < distance and W_up_direction > distance and E_up_direction > distance:
             print("Turn left")
             twist.linear.x = 0.0
             twist.angular.z = 0.2
             self._cmd_pub.publish(twist)
-        
         elif N_direction < distance and W_up_direction < distance and E_up_direction < distance:
             print("Turn left")
             twist.linear.x = 0.0
@@ -193,7 +194,7 @@ class findTags:
             twist.linear.x = 0.2
             twist.angular.z = 0.0
             self._cmd_pub.publish(twist)
-            # Turn right
+        # Turn right
         elif N_direction > distance and W_up_direction < distance and E_up_direction > distance and E_mid_direction > distance:
             print("Find wall")
             twist.linear.x = 0.0
@@ -214,7 +215,7 @@ class findTags:
             twist.linear.x = 0.0
             twist.angular.z = 0.2
             self._cmd_pub.publish(twist)
-            # Turn right
+        # Turn right
         elif N_direction > distance and W_up_direction < distance and E_up_direction < distance:
             print("Follow wall")
             twist.linear.x = 0.1
@@ -255,39 +256,14 @@ class findTags:
       print(e)
 
 
-def main(numberOfTokens):
-  ic = findTags()
-  rospy.init_node('findTokens', anonymous=True)
-  
-  findTags.main(ic,numberOfTokens)
+def main(args):
+  ic = image_converter()
+  rospy.init_node('image_converter', anonymous=True)
   try:
     rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
   cv2.destroyAllWindows()
 
-
-def foundToken():
-  global tokenFound
-  saved = SavePosition.save()
-  #saved = True - new Token - saved to file
-  #saved = False - Token already in file^
-  rospy.loginfo("TokenSaved: " + str(saved))
-  
-  if saved:
-    rospy.sleep(5)
-    tokenFound = False
-
-  
-
-  # publish position of robot to topic tokenFound
-  # if tokenCount >= numberOfTokens
-    # check if map is complete
-    # if map complete
-      # save map and stop robot
-    # if map not complete
-      # go to open space
-  # else:
-    # continue finding tokens
 if __name__ == '__main__':
     main(sys.argv)

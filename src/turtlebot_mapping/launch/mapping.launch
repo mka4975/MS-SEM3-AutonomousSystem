@@ -1,9 +1,5 @@
 <launch>
-    <node name="image_view" pkg="image_view" type="image_view" respawn="true" output="screen">
-    <remap from="image" to="/usb_cam/image_raw" />
-    </node>
-
     <!--map creation and saving-->
-    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch"/>   
+    <include file="/home/michael/turtlebot_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch"/>  
     
 </launch>

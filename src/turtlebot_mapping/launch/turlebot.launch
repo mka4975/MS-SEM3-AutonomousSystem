@@ -1,4 +1,3 @@
 <launch>
-    <include file="$(find turtlebot_mapping)/launch/mapping.launch"/>
-    
+    <include file="/home/michael/turtlebot_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch"/>   
 </launch>
