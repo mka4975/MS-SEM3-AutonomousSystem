@@ -43,9 +43,11 @@ class SavePosition():
 
     def checkMessage(message):
         global positionList
+        print(message)
         transformList = message.transforms
         for transformStamped in transformList:
-            if transformStamped.child_frame_id == "base_footprint":
+            print(transformStamped.child_frame_id)
+            if transformStamped.child_frame_id == "odom":
                 position = transformStamped.transform.translation
                 if not SavePosition.isInList(position):
                     positionList.append(position)

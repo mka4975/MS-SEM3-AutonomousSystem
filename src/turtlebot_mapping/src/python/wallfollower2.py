@@ -26,12 +26,14 @@ class WallFollowerTwo:
     def step(self):
         twist = self.sensePlan()
         self.botVelPub.publish(twist)
+        print(twist)
 
         self.rate.sleep()
+        return twist
 
     def sensePlan(self):
         if not self.laserData:
-            #print("Laser data not present")
+            print("Laser data not present")
             return Twist()
 
         data = np.array(self.laserData)

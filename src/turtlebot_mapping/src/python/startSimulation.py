@@ -1,9 +1,9 @@
 import roslaunch
 import rospy
-import FindTokens
-import DefineNumberOfTokens
+import findTokens
+import defineNumberOfTokens
 
-numberOfTags = DefineNumberOfTokens.main()
+numberOfTags = defineNumberOfTokens.main()
 
 rospy.init_node('simulation', anonymous=False)
 uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
@@ -12,6 +12,6 @@ launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/michael/turtlebot_ws/src
 launch.start()
 rospy.loginfo("started")
 
-#FindTokens.main(numberOfTags)
+#findTokens.main(numberOfTags)
 
 rospy.spin()
