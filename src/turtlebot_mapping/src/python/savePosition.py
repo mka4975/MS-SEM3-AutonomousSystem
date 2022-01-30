@@ -7,8 +7,10 @@ from turtlebot3_msgs.msg import *
 from actionlib_msgs.msg import *
 import xml.etree.ElementTree as ET
 
+from geometry_msgs.msg import Twist
+
 number = 0
-distance = 0.2
+distance = 0.1
 positionList = []
 
 class SavePosition():
@@ -18,21 +20,31 @@ class SavePosition():
         rospy.on_shutdown(self.shutdown)
 
             
-    def save():
+    def save(self):
         message = rospy.wait_for_message("/tf",TFMessage)
-        saved = SavePosition.saveToFile(message)
+        saved = SavePosition.saveToFile(self,message)
         return saved
 
 
-    def saveToFile(message):
+    def saveToFile(self,message):
         global number        
         if SavePosition.checkMessage(message):
-            f = open("position.txt","a")
-            f.write(str(number) + "\n")
-            f.write(str(message) + "\n\n")
-            f.close()
+            try:
+                f = open("position.txt","a")
+                f.write(str(number) + "\n")
+                f.write(str(message) + "\n\n")
+                f.close()
+            except Exception:
+                print(Exception)
             rospy.loginfo('position Saved as number ' + str(number))
             number = number + 1
+            twist=Twist()
+            twist.linear.x = 0
+            twist.angular.z = 0
+            self._cmd_pub.publish(twist)
+            sound_pub = rospy.Publisher("sound", Sound, queue_size = 10)
+            sound_pub.publish(1)
+            rospy.sleep(5)
             return True
         else: 
             rospy.loginfo('position already saved')         

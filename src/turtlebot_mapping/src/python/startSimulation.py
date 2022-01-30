@@ -3,7 +3,7 @@ import rospy
 import findTokens
 import defineNumberOfTokens
 
-numberOfTags = defineNumberOfTokens.main()
+# numberOfTags = defineNumberOfTokens.main()
 
 rospy.init_node('simulation', anonymous=False)
 uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
