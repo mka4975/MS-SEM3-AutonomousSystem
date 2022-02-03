@@ -10,7 +10,9 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from std_msgs.msg import String, Bool
 
-import defineNumberOfTokens
+from turtlebot3_msgs.msg import Sound
+
+import inputNumberOfTokens
 from savePosition import SavePosition
 from getScan import get_scan
 from tokenOrder import tokenOrder
@@ -34,15 +36,11 @@ class findTags:
   def start(self, argnumberOfTokens):
     global numberOfTokens 
     numberOfTokens = argnumberOfTokens
-    self.image_pub = rospy.Publisher("image_topic_2", Image, queue_size = 10)#??? do we need the second picture? 
     self.bridge = CvBridge()
     self.map_sub = rospy.Subscriber("mapCompleted", Bool, self.mapCompletedCallback)
-    self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.imageCallback) #for Gazebo turtlebot
+    #self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.imageCallback) #for Gazebo turtlebot
     self.cmd_sub = rospy.Subscriber('scan', LaserScan, self.scanCallback)
-
-    
-    
-    #self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage,self.imageCallback) #for real robot image
+    self.image_sub = rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage,self.imageCallback) #for real robot image
 
 
   def imageCallback(self,data):
@@ -52,9 +50,9 @@ class findTags:
     tokenFound = False
     
     try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8") #for the simulation
-      #np_arr = np.fromstring(data.data, np.uint8) # for the turtlebot
-      #cv_image = self.bridge.compressed_imgmsg_to_cv2(np_arr, "bgr8") #for the turtlebot
+      #cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8") #for the simulation
+      np_arr = np.fromstring(data.data, np.uint8) # for the turtlebot
+      cv_image = self.bridge.compressed_imgmsg_to_cv2(np_arr, "bgr8") #for the turtlebot
       hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
       
 
@@ -105,145 +103,167 @@ class findTags:
 
       #/ Algorithm: center of the blob detection
       
-      # cv2.imshow("Color Detected", output_hsv)
+      cv2.imshow("Color Detected", output_hsv)
     except CvBridgeError as e:
       print(e)
+
+    
     (rows,cols,channels) = cv_image.shape
     if cols > 60 and rows > 60 :
       cv2.circle(cv_image, (50,50), 10, 255)
 
-    #cv2.imshow("Image window", cv_image)
+    cv2.imshow("Image window", cv_image)
     cv2.waitKey(3)
-
-    try:
-      self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))# ??????????
-    except CvBridgeError as e:
-      print(e)
     
 
   def scanCallback(self,data):
     global allTokensFound
     global tokenFound
     # Robot moving algorithm
-    self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+    self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+    self._sound_pub = rospy.Publisher('sound', Sound, queue_size=10)
     
     
     lidar_distances = get_scan(data)
-    N1_direction = min(lidar_distances[0:30])
-    N2_direction = min(lidar_distances[330:360])
-    N_direction = min(N1_direction, N2_direction)
-    E_up_direction = min(lidar_distances[290:329])
-    E_mid_direction = min(lidar_distances[270:280])   
-    W_up_direction = min(lidar_distances[31:70])
+    N1_range = lidar_distances[5:30]
+    N2_range = lidar_distances[330:355]
+    N_range = N1_range + N2_range
+    E_up_range = lidar_distances[290:329]
+    E_mid_range = lidar_distances[270:280]
+    W_up_range = lidar_distances[31:70]
+
+    N1_direction = min(i for i in N1_range if i > 0)
+    N2_direction = min(i for i in N2_range if i > 0)
+    N_direction = min(i for i in N_range if i > 0)
+    E_up_direction = min(i for i in E_up_range if i > 0)
+    E_mid_direction = min(i for i in E_mid_range if i > 0)
+    W_up_direction = min(i for i in W_up_range if i > 0)
 
     if allTokensFound: 
         completeMap(self)
     else :
-      if cX != 0 and cY != 0:
+      if cX != 0 and cY >= 300:
         tokenFound = True
 
       if tokenFound:
-        self.goToToken(N1_direction,N2_direction,N_direction)
+        self.goToToken(N1_direction,N2_direction,N_direction,E_up_direction,W_up_direction)
       else:
         self.followWall(N_direction,E_up_direction,E_mid_direction,W_up_direction)   
 
       # Token finding
-  def goToToken(self,N1_direction,N2_direction,N_direction):
+  def goToToken(self,N1_direction,N2_direction,N_direction,E_up_direction,W_up_direction):
     twist = Twist()
-    if 0 < cY < 680:
+    distance = 0.3
+    if cY < 680:
       print(f"Distance to center: {cX=} , {cY=}")
 
       # Avoidance of possible obstacles
-      if N_direction < 0.2:
-        if N1_direction-N2_direction>0.05:
+      print(f"{N_direction=}, {N1_direction=}, {N2_direction=}")
+      if N_direction > 0 and N_direction < distance and E_up_direction > W_up_direction:
           print("Avoid collision. Turn right")
-          twist.linear.x = 0.0
+          twist.linear.x = 0.1
           twist.angular.z = -0.3
           self._cmd_pub.publish(twist)
-        elif N2_direction-N1_direction>0.05:
-          print("Avoid collision. Turn left")
-          twist.linear.x = 0.0
-          twist.angular.z = 0.3
-          self._cmd_pub.publish(twist)  
-
-      # Getting to the center of token
-      if cX <= 700:
-        print("twistLeft")
-        twist.linear.x = 0.05
-        twist.angular.z = 0.1
-        self._cmd_pub.publish(twist)
-      elif cX > 750:
-        print("twistRight")
-        twist.linear.x = 0.05
-        twist.angular.z = -0.1
-        self._cmd_pub.publish(twist)            
+      elif N_direction > 0 and N_direction < distance and E_up_direction < W_up_direction:
+        print("Avoid collision. Turn left")
+        twist.linear.x = 0.1
+        twist.angular.z = 0.3
+        self._cmd_pub.publish(twist)  
       else:
-        print("Forward")
-        twist.linear.x = 0.15
-        twist.angular.z = 0.0
-        self._cmd_pub.publish(twist)
+        # Getting to the center of token
+        if cX <= 700:
+          print("twistLeft")
+          twist.linear.x = 0.05
+          twist.angular.z = 0.1
+          self._cmd_pub.publish(twist)
+        elif cX > 750:
+          print("twistRight")
+          twist.linear.x = 0.05
+          twist.angular.z = -0.1
+          self._cmd_pub.publish(twist)            
+        else:
+          print("Forward")
+          twist.linear.x = 0.15
+          twist.angular.z = 0.0
+          self._cmd_pub.publish(twist)
     else:
       print("Stop")
       foundToken(self)
 
       # Wallfollower
   def followWall(self,N_direction,E_up_direction,E_mid_direction,W_up_direction):
-    distance = 0.3 
+    distance = 0.25
+    safeDistance = 0.2
     twist = Twist()
     print(f"{N_direction=}, {W_up_direction=}, {E_up_direction=}, {E_mid_direction=}")
     if N_direction > distance and W_up_direction > distance and E_up_direction > distance:
-        print("Find wall")
-        twist.linear.x = 0.1
-        twist.angular.z = 0
+        print("Turn right 1")
+        twist.linear.x = 0.05
+        twist.angular.z = -0.4
         self._cmd_pub.publish(twist)
     # Turning left if facing obstacle only at N sensor
     elif N_direction < distance and W_up_direction > distance and E_up_direction > distance:
-        print("Turn left")
+        print("Turn left 1")
         twist.linear.x = 0.0
         twist.angular.z = 0.3
         self._cmd_pub.publish(twist)
     
     elif N_direction < distance and W_up_direction < distance and E_up_direction < distance:
-        print("Turn left")
+        print("Turn left 2")
         twist.linear.x = 0.0
         twist.angular.z = 0.3
         self._cmd_pub.publish(twist)                
-    elif N_direction > distance and W_up_direction > distance and E_up_direction < distance:
-        print("Follow wall")
+    elif N_direction > distance and W_up_direction > distance and E_up_direction < distance and E_mid_direction > distance:
+        print("Follow wall 1a")
+        twist.linear.x = 0.05
+        twist.angular.z = -0.1
+        self._cmd_pub.publish(twist)
+    elif N_direction > distance and W_up_direction > distance and E_up_direction < distance and E_mid_direction > safeDistance:
+        print("Follow wall 1b")
         twist.linear.x = 0.1
-        twist.angular.z = 0.0
+        twist.angular.z = -0.0
+        self._cmd_pub.publish(twist)
+    elif N_direction > distance and W_up_direction > distance and E_up_direction < distance and E_mid_direction < safeDistance:
+        print("Follow wall 1c")
+        twist.linear.x = 0.05
+        twist.angular.z = 0.02
         self._cmd_pub.publish(twist)
     elif N_direction > distance and W_up_direction < distance and E_up_direction > distance and E_mid_direction > distance:
-        print("Turn right")
+        print("Turn right 2")
         twist.linear.x = 0.1
-        twist.angular.z = -0.3
+        twist.angular.z = -0.4
         self._cmd_pub.publish(twist)
     elif N_direction > distance and W_up_direction < distance and E_up_direction > distance:
         print("Find wall")
         twist.linear.x = 0.015
-        twist.angular.z = -0.3
+        twist.angular.z = -0.4
         self._cmd_pub.publish(twist)
     elif N_direction < distance and W_up_direction > distance and E_up_direction < distance:
-        print("Turn left")
+        print("Turn left 3")
         twist.linear.x = 0.0
         twist.angular.z = 0.3
         self._cmd_pub.publish(twist)
     elif N_direction < distance and W_up_direction < distance and E_up_direction > distance:
-        print("Turn left")
+        print("Turn left 4")
         twist.linear.x = 0.0
         twist.angular.z = 0.3
         self._cmd_pub.publish(twist)
-    elif N_direction > distance and W_up_direction < distance and E_up_direction < distance:
-        print("Follow wall")
+    elif N_direction > distance and W_up_direction < distance and E_up_direction < distance and E_mid_direction > safeDistance:
+        print("Follow wall 2a")
         twist.linear.x = 0.1
-        twist.angular.z = 0.0
+        twist.angular.z = -0.05
+        self._cmd_pub.publish(twist)
+    elif N_direction > distance and W_up_direction < distance and E_up_direction < distance and E_mid_direction < safeDistance:
+        print("Follow wall 2b")
+        twist.linear.x = 0.1
+        twist.angular.z = 0.01
         self._cmd_pub.publish(twist)
     else:
         print("Spin")
         twist.linear.x = 0.0
         twist.angular.z = -0.5
         self._cmd_pub.publish(twist)
-      # # /Wallfollower
+      # /Wallfollower
       # /Robot moving algorithm
     
   # fallback if the map completion doesn't work
@@ -283,7 +303,7 @@ def foundToken(self):
   if numberOfFoundTokens < int(numberOfTokens) :
     saved = SavePosition.save(self)
     #saved = True - new Token - saved to file
-    #saved = False - Token already in file^
+    #saved = False - Token already in file
     rospy.loginfo("TokenSaved: " + str(saved))
     
     if saved:
@@ -297,7 +317,7 @@ def foundToken(self):
 
 def main():
   global numberOfTokens
-  numberOfTokens = defineNumberOfTokens.main()
+  numberOfTokens = inputNumberOfTokens.main()
   ic = findTags()
   rospy.init_node('findTokens', anonymous=False,disable_signals=True)
   

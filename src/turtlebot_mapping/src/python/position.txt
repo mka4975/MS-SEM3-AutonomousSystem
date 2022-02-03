@@ -4,60 +4,17 @@ transforms:
     header: 
       seq: 0
       stamp: 
-        secs: 1643374222
-        nsecs: 836695200
+        secs: 1643873719
+        nsecs: 314744300
       frame_id: "map"
     child_frame_id: "odom"
     transform: 
       translation: 
-        x: 0.5364207235290839
-        y: 0.0893100834135307
-        z: 0.0
-      rotation: 
-        x: 0.0
-        y: 0.0
-        z: 0.26996965258067257
-        w: 0.9628688315058657
-
-1
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1643374366
-        nsecs: 287571800
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: 0.5103608776452229
-        y: -0.09709152761921466
-        z: 0.0
-      rotation: 
-        x: 0.0
-        y: 0.0
-        z: 0.2779196540961388
-        w: 0.9606043232606662
-
-2
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1643374471
-        nsecs: 636600600
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: -0.17607116993892352
-        y: -0.2708953787431872
+        x: -0.00551429132107714
+        y: -0.026786081850174524
         z: -0.0
       rotation: 
         x: 0.0
         y: 0.0
-        z: 0.32186946641504227
-        w: 0.9467840548877532
-
+        z: -0.046562110751420735
+        w: 0.9989153967390694

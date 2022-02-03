@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from geometry_msgs.msg import Twist
 
 number = 0
-distance = 0.1
+distance = 0.05
 positionList = []
 
 class SavePosition():
@@ -42,9 +42,9 @@ class SavePosition():
             twist.linear.x = 0
             twist.angular.z = 0
             self._cmd_pub.publish(twist)
-            sound_pub = rospy.Publisher("sound", Sound, queue_size = 10)
-            sound_pub.publish(1)
-            rospy.sleep(5)
+            self._sound_pub.publish(1)
+            # sound_pub = rospy.Publisher("sound", Sound, queue_size = 10)
+            # sound_pub.publish(1)
             return True
         else: 
             rospy.loginfo('position already saved')         
@@ -55,7 +55,6 @@ class SavePosition():
 
     def checkMessage(message):
         global positionList
-        print(message)
         transformList = message.transforms
         for transformStamped in transformList:
             print(transformStamped.child_frame_id)
@@ -73,7 +72,9 @@ class SavePosition():
         for position in positionList:
             array1 = numpy.array((position.x,position.y,position.z))
             array2 = numpy.array((argposition.x,argposition.y,argposition.z))
-            if(abs(numpy.linalg.norm(array1-array2)))<distance:
+            realDistance = abs(numpy.linalg.norm(array1-array2))
+            print(realDistance)
+            if realDistance<distance:
                 return True
 
         return False    
@@ -82,10 +83,5 @@ def main():
     try:
         save = SavePosition()
         return save
-        # SavePosition.save()
-        # rospy.init_node('savePosition', anonymous=False)
     except rospy.ROSInterruptException:
         rospy.rospy.loginfo('Ctrl-C caught. Quitting')
-
-if __name__ == '__main__':
-    main()

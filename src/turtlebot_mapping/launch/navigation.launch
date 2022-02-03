@@ -1,0 +1,8 @@
+<launch>
+    <!--navigation the saved map-->
+
+
+    <include file="/home/michael/turtlebot_ws/src/turtlebot3/turtlebot3_navigation/launch/turtlebot3_navigation.launch">
+        <arg name="map_file" value="/home/michael/turtlebot_ws/map.yaml"/>    
+    </include>  
+</launch>
