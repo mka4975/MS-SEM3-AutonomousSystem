@@ -61,32 +61,37 @@ class GoToPose():
         rospy.sleep(1)
 
 
-def main(positions):
-    for position in positions:
-        try:
-            # rospy.init_node('nav_test', anonymous=False)
-            navigator = GoToPose()
+def main(position):
+    position = [float(i)for i in position]
+    print(position)
+    try:
+        # rospy.init_node('nav_test', anonymous=False)
+        navigator = GoToPose()
 
-            # Customize the following values so they are appropriate for your location
-            position = {'x': position[0], 'y': position[1]}
-            quaternion = {'r1': 0.000, 'r2': 0.000, 'r3': 0.000, 'r4' : 1.000}
+        # Customize the following values so they are appropriate for your location
+        position = {'x': position[0], 'y': position[1]}
+        quaternion = {'r1': 0.000, 'r2': 0.000, 'r3': 0.000, 'r4' : 1.000}
 
-            rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
-            success = navigator.goto(position, quaternion)
+        rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
+        success = navigator.goto(position, quaternion)
 
-            if success:
-                rospy.loginfo("Hooray, reached the desired pose")
-                return True
-            else:
-                rospy.loginfo("The base failed to reach the desired pose")
-                return False
+        if success:
+            rospy.loginfo("Hooray, reached the desired pose")
+            return True
+        else:
+            rospy.loginfo("The base failed to reach the desired pose")
+            return False
 
-            # Sleep to give the last log messages time to be sent
-            rospy.sleep(1)
+        # Sleep to give the last log messages time to be sent
+        rospy.sleep(1)
 
-        except rospy.ROSInterruptException:
-            rospy.loginfo("Ctrl-C caught. Quitting")
+    except rospy.ROSInterruptException:
+        rospy.loginfo("Ctrl-C caught. Quitting")
 
 
 if __name__ == '__main__':
-    main(positions)
+    rospy.init_node('goToPos', anonymous=False,disable_signals=True)
+    position1 = [0,0]
+    position2 = [0.18,0.81]
+    main(position1)
+    main(position2)

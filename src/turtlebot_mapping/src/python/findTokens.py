@@ -140,7 +140,13 @@ class findTags:
     W_up_direction = min(i for i in W_up_range if i > 0)
 
     if allTokensFound: 
-        completeMap(self)
+        stopRobot()
+        self.map_sub.unregister()
+        self.image_sub.unregister()
+        self.cmd_sub.unregister()
+        tokenOrder.main(numberOfTokens)
+        print("All done")
+        rospy.signal_shutdown("alldone")
     else :
       if cX != 0 and cY >= 300:
         tokenFound = True
@@ -188,11 +194,14 @@ class findTags:
           self._cmd_pub.publish(twist)
     else:
       print("Stop")
+      twist.linear.x = 0.0
+      twist.angular.z = 0.0
+      self._cmd_pub.publish(twist)
       foundToken(self)
 
       # Wallfollower
   def followWall(self,N_direction,E_up_direction,E_mid_direction,W_up_direction):
-    distance = 0.25
+    distance = 0.3
     safeDistance = 0.2
     twist = Twist()
     print(f"{N_direction=}, {W_up_direction=}, {E_up_direction=}, {E_mid_direction=}")
@@ -272,25 +281,7 @@ class findTags:
     if(data.data == True):
       print("Map completed please save it!")
       mapCompleted = True
-      completeMap(self)
 
-    
-def completeMap(self):
-  global mapCompleted
-  global numberOfTokens
-  # analyse map for completeness
-
-  if(mapCompleted):   
-    stopRobot()
-    self.map_sub.unregister()
-    self.image_sub.unregister()
-    self.cmd_sub.unregister()
-    tokenOrder.main(numberOfTokens)
-    print("All done")
-    rospy.signal_shutdown("alldone")
-  else:
-  # TODO: drive to open parts of map
-    return
 
 def foundToken(self):
   global numberOfTokens

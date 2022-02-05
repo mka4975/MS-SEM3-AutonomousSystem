@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from geometry_msgs.msg import Twist
 
 number = 0
-distance = 0.05
+distance = 0.005
 positionList = []
 
 class SavePosition():
@@ -38,13 +38,7 @@ class SavePosition():
                 print(Exception)
             rospy.loginfo('position Saved as number ' + str(number))
             number = number + 1
-            twist=Twist()
-            twist.linear.x = 0
-            twist.angular.z = 0
-            self._cmd_pub.publish(twist)
             self._sound_pub.publish(1)
-            # sound_pub = rospy.Publisher("sound", Sound, queue_size = 10)
-            # sound_pub.publish(1)
             return True
         else: 
             rospy.loginfo('position already saved')         
@@ -60,6 +54,9 @@ class SavePosition():
             print(transformStamped.child_frame_id)
             if transformStamped.child_frame_id == "odom":
                 position = transformStamped.transform.translation
+                if len(positionList)==0:
+                    positionList.append(position)
+                    return True
                 if not SavePosition.isInList(position):
                     positionList.append(position)
                     return True
