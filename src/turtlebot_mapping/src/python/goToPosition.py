@@ -62,8 +62,9 @@ class GoToPose():
 
 
 def main(position):
-    position = [float(i)for i in position]
-    print(position)
+    # position1 = positionList[0]
+    position = [float(i)for i in position1]
+    print("Single Pos" + str(position))
     try:
         # rospy.init_node('nav_test', anonymous=False)
         navigator = GoToPose()
@@ -91,7 +92,5 @@ def main(position):
 
 if __name__ == '__main__':
     rospy.init_node('goToPos', anonymous=False,disable_signals=True)
-    position1 = [0,0]
-    position2 = [0.18,0.81]
+    position1 = [0.0,0.0]
     main(position1)
-    main(position2)
