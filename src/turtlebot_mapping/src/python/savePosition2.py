@@ -8,9 +8,10 @@ from actionlib_msgs.msg import *
 import xml.etree.ElementTree as ET
 
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
 number = 0
-distance = 0.05
+distance = 0.2
 positionList = []
 
 class SavePosition():
@@ -21,7 +22,7 @@ class SavePosition():
 
             
     def save(self):
-        message = rospy.wait_for_message("/tf",TFMessage)
+        message = rospy.wait_for_message("/odom",Odometry)
         saved = SavePosition.saveToFile(self,message)
         return saved
 
@@ -32,7 +33,7 @@ class SavePosition():
             try:
                 f = open("position.txt","a")
                 f.write(str(number) + "\n")
-                f.write(str(message) + "\n\n")
+                f.write(str(message.pose.pose) + "\n\n")
                 f.close()
             except Exception:
                 print(Exception)
@@ -49,26 +50,22 @@ class SavePosition():
 
     def checkMessage(message):
         global positionList
-        transformList = message.transforms
-        for transformStamped in transformList:
-            print(transformStamped.child_frame_id)
-            if transformStamped.child_frame_id == "odom":
-                position = transformStamped.transform.translation
-                if len(positionList)==0:
-                    positionList.append(position)
-                    return True
-                if not SavePosition.isInList(position):
-                    positionList.append(position)
-                    return True
-                else:
-                    return False
+        position = message.pose.pose
+        # if len(positionList)==0:
+        #     positionList.append(position)
+        #     return True
+        if not SavePosition.isInList(position):
+            positionList.append(position)
+            return True
+        else:
+            return False
 
     def isInList(argposition):
         global positionList
         global distance
         for position in positionList:
-            array1 = numpy.array((position.x,position.y,position.z))
-            array2 = numpy.array((argposition.x,argposition.y,argposition.z))
+            array1 = numpy.array((position.position.x,position.position.y,position.position.z))
+            array2 = numpy.array((argposition.position.x,argposition.position.y,argposition.position.z))
             realDistance = abs(numpy.linalg.norm(array1-array2))
             print(realDistance)
             if realDistance<distance:

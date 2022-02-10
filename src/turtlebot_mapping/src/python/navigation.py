@@ -5,6 +5,7 @@ import glob
 import re
 from shutil import ExecError
 from tkinter import E
+from turtle import Turtle
 
 from matplotlib.pyplot import xlim
 
@@ -22,6 +23,8 @@ STATE_MOW             = 2
 tokensToFind = []
 tokenAproaching = 0
 gotPositions = False
+globalNumberList = []
+gotGlobalNumbers = False
 xList = []
 yList = []
 
@@ -47,6 +50,7 @@ class navigation:
         cmd_vel.publish(twist)
       else:
         navigation.getPositionsFromFile()
+        navigation.getGlobalNumbers()
         navigation.goToPostitions()
         
 
@@ -67,8 +71,8 @@ class navigation:
       xr = abs(xmax-xmin)
       yr = abs(ymax-ymin)
       print(xr, yr) 
-      if float(yr) < 1: 
-        if float(xr) < 1:
+      if float(yr) < 1.0: 
+        if float(xr) < 1.0:
           STATE_GLOBAL_LOCALIZE = True
     else:
       return
@@ -76,22 +80,25 @@ class navigation:
   def goToPostitions():
     global xList
     global yList
+
+    print("Put in the number of tags you want to go")
+    numberOfTarget = input()
     new_lst = [list(x) for x in zip(xList, yList)]
-    goToPosition.main(new_lst)
+    goToPosition.main(new_lst,int(numberOfTarget))
 
   def getPositionsFromFile():
     global gotPositions
     global xList
     global yList
     if not gotPositions:
-      translation = "translation"
+      position = "position"
       try:
         f = open("position.txt","r")
         lines = f.readlines()
         
         for i in range(0,len(lines)):
           line = lines[i]
-          if translation in line:
+          if position in line:
             x = lines[i+1]
             y = lines[i+2]
             x = x.split("x: ",1)[1]
@@ -102,9 +109,26 @@ class navigation:
             yList.append(float(y))
 
         f.close
-        print(xList)
-        print(yList)
+        print("x: " + str(xList))
+        print("y: " + str(yList))
         gotPositions = True
+      except Exception:
+        return
+
+
+  def getGlobalNumbers():
+    global globalNumberList
+    global gotGlobalNumbers
+    if not gotGlobalNumbers:
+
+      try:
+        f = open("globalTokenNumbers.txt","r")
+        lines = f.readlines()
+
+        globalNumberList = lines[0]
+
+        f.close
+        gotGlobalNumbers = True  
       except Exception:
         return
 

@@ -1,84 +1,55 @@
 0
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1644417417
-        nsecs:  36099700
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: -0.03742091094834025
-        y: 0.0839411614379256
-        z: 0.0
-      rotation: 
-        x: -0.0
-        y: 0.0
-        z: 0.21123560887203485
-        w: 0.9774351730649254
+position: 
+  x: 0.44148096442222595
+  y: 0.004905391484498978
+  z: 0.0
+orientation: 
+  x: 0.0
+  y: 0.0
+  z: -0.019146107137203217
+  w: 0.9998167157173157
 
 1
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1644417439
-        nsecs: 135108800
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: 0.018618555443604703
-        y: 0.5975003873511888
-        z: 0.0
-      rotation: 
-        x: 0.0
-        y: 0.0
-        z: -0.6296828924478314
-        w: 0.7768522735749268
+position: 
+  x: 0.6101204752922058
+  y: 0.49176326394081116
+  z: 0.0
+orientation: 
+  x: 0.0
+  y: 0.0
+  z: 0.19237293303012848
+  w: 0.9813218712806702
 
 2
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1644417479
-        nsecs: 636095700
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: -0.20489221115535683
-        y: 1.025821103831239
-        z: 0.0
-      rotation: 
-        x: 0.0
-        y: 0.0
-        z: 0.6186340727193013
-        w: 0.7856792501210214
+position: 
+  x: -0.4679637551307678
+  y: 0.3339211344718933
+  z: 0.0
+orientation: 
+  x: 0.0
+  y: 0.0
+  z: -0.6591060161590576
+  w: 0.7520500421524048
 
 3
-transforms: 
-  - 
-    header: 
-      seq: 0
-      stamp: 
-        secs: 1644417523
-        nsecs: 186516000
-      frame_id: "map"
-    child_frame_id: "odom"
-    transform: 
-      translation: 
-        x: -0.701261910840582
-        y: 0.7865214230131969
-        z: -0.0
-      rotation: 
-        x: 0.0
-        y: 0.0
-        z: 0.9342298514075263
-        w: -0.3566715362053317
+position: 
+  x: -0.6669021844863892
+  y: -1.0900081396102905
+  z: 0.0
+orientation: 
+  x: 0.0
+  y: 0.0
+  z: -0.7616716027259827
+  w: 0.6479632258415222
+
+4
+position: 
+  x: -0.22546358406543732
+  y: -0.4283040165901184
+  z: 0.0
+orientation: 
+  x: 0.0
+  y: 0.0
+  z: 0.2661066949367523
+  w: 0.963943600654602
 

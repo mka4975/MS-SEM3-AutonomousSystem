@@ -4,11 +4,13 @@
 # running prior to starting this script
 # For simulation: launch gazebo world & amcl_demo prior to run this script
 
+from turtle import pos
 import rospy
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actionlib
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion
+from turtlebot3_msgs.msg import Sound
 
 
 class GoToPose():
@@ -61,23 +63,29 @@ class GoToPose():
         rospy.sleep(1)
 
 
-def main(position):
-    # position1 = positionList[0]
-    position = [float(i)for i in position1]
-    print("Single Pos" + str(position))
+def main(positionList,target):
+    allTokenFound = False
+    currentTarget = target
     try:
+        positionToGo = positionList[currentTarget]
         # rospy.init_node('nav_test', anonymous=False)
         navigator = GoToPose()
 
         # Customize the following values so they are appropriate for your location
-        position = {'x': position[0], 'y': position[1]}
+        position = {'x': positionToGo[0], 'y': positionToGo[1]}
         quaternion = {'r1': 0.000, 'r2': 0.000, 'r3': 0.000, 'r4' : 1.000}
 
         rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
         success = navigator.goto(position, quaternion)
 
         if success:
+            # pub = rospy.Publisher('sound', Sound, queue_size=10)
+            # pub.publish(2)
             rospy.loginfo("Hooray, reached the desired pose")
+            if currentTarget < len(positionList):
+                currentTarget += 1
+            else:
+                allTokenFound = True
             return True
         else:
             rospy.loginfo("The base failed to reach the desired pose")
@@ -92,5 +100,5 @@ def main(position):
 
 if __name__ == '__main__':
     rospy.init_node('goToPos', anonymous=False,disable_signals=True)
-    position1 = [0.0,0.0]
+    position1 = [[-1,-1],[1,1]]
     main(position1)

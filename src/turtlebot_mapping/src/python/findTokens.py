@@ -13,7 +13,7 @@ from std_msgs.msg import String, Bool
 from turtlebot3_msgs.msg import Sound
 
 import inputNumberOfTokens
-from savePosition import SavePosition
+from savePosition2 import SavePosition
 from getScan import get_scan
 from tokenOrder import tokenOrder
 
@@ -288,18 +288,22 @@ def foundToken(self):
   global numberOfFoundTokens
   global tokenFound
   global allTokensFound
-  print("token Found")
-  print("numberOfFoundTokens: " + str(numberOfFoundTokens))
-  print("numberOfTokens: " + str(numberOfTokens))
   if numberOfFoundTokens < int(numberOfTokens) :
     saved = SavePosition.save(self)
     #saved = True - new Token - saved to file
     #saved = False - Token already in file
-    rospy.loginfo("TokenSaved: " + str(saved))
+    
     
     if saved:
       tokenFound = False
       numberOfFoundTokens+=1
+      print("token Found")
+      print("numberOfFoundTokens: " + str(numberOfFoundTokens))
+      print("numberOfTokens: " + str(numberOfTokens))
+      print("TokenSaved: " + str(saved))
+    else:
+      tokenFound = False
+
   else:
     finish_pub = rospy.Publisher("globalState", String, queue_size=10)
     msg = String("All Tokens Found")
